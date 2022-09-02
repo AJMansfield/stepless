@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+import dataclasses
 import numpy as np
 import numpy.typing as npt
 from warnings import warn
@@ -40,6 +41,11 @@ class CollisionImpulse:
         old_e = self._e
         self._e = restitution
         self.dv = self.dv / (1+old_e) * (1+self._e)
+    
+    def with_restitution(self, e: scalar_T) -> 'CollisionImpulse':
+        result = dataclasses.replace(self)
+        result.e = e
+        return result
     
     def split(self, m1: scalar_T, m2: scalar_T) -> 'tuple[CollisionImpulse, CollisionImpulse]':
         """Split this impulse into two pieces based on relative masses."""
@@ -109,7 +115,7 @@ class Ball:
             dot(x,x) - r*r,
         )).roots
     
-    def get_collision_impulse(self, t: scalar_T, other: 'Ball') -> CollisionImpulse:
+    def get_collision_impulse(self, other: 'Ball', t: scalar_T) -> CollisionImpulse:
         x = self.x_at(t) - other.x_at(t)
         v = self.v_at(t) - other.v_at(t)
         a = self.a_at(t) - other.a_at(t)
