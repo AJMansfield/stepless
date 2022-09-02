@@ -1,3 +1,4 @@
+from cmath import isinf
 from dataclasses import dataclass, field
 import dataclasses
 import numpy as np
@@ -49,13 +50,24 @@ class CollisionImpulse:
     
     def split(self, m1: scalar_T, m2: scalar_T) -> 'tuple[CollisionImpulse, CollisionImpulse]':
         """Split this impulse into two pieces based on relative masses."""
-        denom = m1 + m2
-        f1 = -m1 / denom
-        f2 = m2 / denom
-        return (
-            CollisionImpulse(t=self.t, dx=self.dx * f1, dv=self.dv * f1, _e=self._e),
-            CollisionImpulse(t=self.t, dx=self.dx * f2, dv=self.dv * f2, _e=self._e)
-        )
+        if np.isinf(m1) and not np.isinf(m2):
+            return (
+                CollisionImpulse(t=self.t, dx=vec_zero, dv=vec_zero, _e=self._e),
+                self,
+            )
+        elif not np.isinf(m1) and np.isinf(m2):
+            return (
+                CollisionImpulse(t=self.t, dx=-self.dx, dv=-self.dv, _e=self._e),
+                CollisionImpulse(t=self.t, dx=vec_zero, dv=vec_zero, _e=self._e),
+            )
+        else:
+            denom = m1 + m2
+            f1 = -m1 / denom
+            f2 = m2 / denom
+            return (
+                CollisionImpulse(t=self.t, dx=self.dx * f1, dv=self.dv * f1, _e=self._e),
+                CollisionImpulse(t=self.t, dx=self.dx * f2, dv=self.dv * f2, _e=self._e)
+            )
 
 
 @dataclass
