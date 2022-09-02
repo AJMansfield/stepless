@@ -156,7 +156,7 @@ def test_collide_misaligned():
     assert conservation_law_obeyed(t, momentum, [(b1,m1),(b2,m2)], [(c1,m1),(c2,m2)])
     assert conservation_law_obeyed(t, energy, [(b1,m1),(b2,m2)], [(c1,m1),(c2,m2)])
 
-def test_collide_infinite_mass():
+def test_collide_immovable_object():
     b1 = Ball(x=A([ 1.,0.]), v=A([0.,0.]))
     m1 = np.inf
     b2 = Ball(x=A([-1.,0.]), v=A([ 1.,0.]))
@@ -173,6 +173,63 @@ def test_collide_infinite_mass():
     assert np.allclose(b2.x, c2.x)
     assert np.allclose(b1.v, c1.v)
     assert np.allclose(b2.v, -c2.v)
+    assert conservation_law_obeyed(t, energy, [(b2,m2)], [(c2,m2)])
+
+def test_collide_immovable_object_and_unstoppable_force():
+    b1 = Ball(x=A([ 1.,0.]), v=A([0.,0.]))
+    m1 = np.inf
+    b2 = Ball(x=A([-1.,0.]), v=A([ 1.,0.]))
+    m2 = np.inf
+    t = 0.
+    e = 1.
+
+    i1, i2 = b1.get_collision_impulse(b2, t=t).with_restitution(e).split(m1,m2)
+
+    c1 = b1.apply_impulse(i1)
+    c2 = b2.apply_impulse(i2)
+
+    assert np.all(np.isnan(c1.x))
+    assert np.all(np.isnan(c2.x))
+    assert np.all(np.isnan(c1.v))
+    assert np.all(np.isnan(c2.v))
+
+def test_collide_inelastic():
+    b1 = Ball(x=A([ 1.,0.]), v=A([-1.,0.]))
+    m1 = 1.
+    b2 = Ball(x=A([-1.,0.]), v=A([ 1.,0.]))
+    m2 = 1.
+    t = 0.
+    e = 0.
+
+    i1, i2 = b1.get_collision_impulse(b2, t=t).with_restitution(e).split(m1,m2)
+
+    c1 = b1.apply_impulse(i1)
+    c2 = b2.apply_impulse(i2)
+
+    assert np.allclose(b1.x, c1.x)
+    assert np.allclose(b2.x, c2.x)
+    assert np.allclose(c1.v, A([0.,0.]))
+    assert np.allclose(c2.v, A([0.,0.]))
     assert conservation_law_obeyed(t, centroid, [(b1,m1),(b2,m2)], [(c1,m1),(c2,m2)])
     assert conservation_law_obeyed(t, momentum, [(b1,m1),(b2,m2)], [(c1,m1),(c2,m2)])
-    assert conservation_law_obeyed(t, energy, [(b1,m1),(b2,m2)], [(c1,m1),(c2,m2)])
+    assert np.isclose(energy(t, [(c1,m1),(c2,m2)]), 0.)
+
+def test_collide_small_vs_large():
+    b1 = Ball(x=A([ 1.,0.]), v=A([-1.,0.]))
+    m1 = 10.
+    b2 = Ball(x=A([-1.,0.]), v=A([ 1.,0.]))
+    m2 = 1.
+    t = 0.
+    e = 1.
+
+    i1, i2 = b1.get_collision_impulse(b2, t=t).with_restitution(e).split(m1,m2)
+
+    c1 = b1.apply_impulse(i1)
+    c2 = b2.apply_impulse(i2)
+
+    assert np.allclose(b1.x, c1.x)
+    assert np.allclose(b2.x, c2.x)
+    assert np.linalg.norm(c2.v) > np.linalg.norm(c1.v)
+    assert conservation_law_obeyed(t, centroid, [(b1,m1),(b2,m2)], [(c1,m1),(c2,m2)])
+    assert conservation_law_obeyed(t, momentum, [(b1,m1),(b2,m2)], [(c1,m1),(c2,m2)])
+    assert np.isclose(energy(t, [(c1,m1),(c2,m2)]), 0.)
