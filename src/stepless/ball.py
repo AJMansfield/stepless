@@ -16,7 +16,7 @@ def dot(a, b):
     except AttributeError:
         return a.T @ b #sympy compatibility?
 
-def next_root_after(roots: npt.NDArray, t: scalar_T) -> scalar_T:
+def next_time_after(roots: npt.NDArray, t: scalar_T) -> scalar_T:
     best = np.inf
     for r in roots:
         r = np.real_if_close(r)
@@ -80,6 +80,8 @@ class Ball:
     """Acceleration of this ball."""
     r: scalar_T = 1.
     """Collision radius of this ball."""
+    m: scalar_T = 1.
+    """Mass of this ball."""
 
     def x_at(self, t: scalar_T) -> vector_T:
         return (self.a / 2 * t + self.v) * t + self.x
@@ -113,20 +115,6 @@ class Ball:
         da = vec_zero if a is None else self.a - a
         return self.apply_impulse(t=t,dx=dx,dv=dv,da=da)
 
-    def find_collision_ball(self, other: 'Ball') -> npt.NDArray:
-        x = self.x - other.x
-        v = self.v - other.v
-        a = self.a - other.a
-        r = self.r + other.r
-        
-        return np.poly1d((
-            dot(a,a) / 4,
-            dot(v,a),
-            dot(x,a) + dot(v,v),
-            dot(x,v) * 2,
-            dot(x,x) - r*r,
-        )).roots
-    
     def get_collision_impulse(self, other: 'Ball', t: scalar_T) -> CollisionImpulse:
         x = self.x_at(t) - other.x_at(t)
         v = self.v_at(t) - other.v_at(t)
@@ -140,4 +128,19 @@ class Ball:
 
         return CollisionImpulse(t=t, dx=dx, dv=dv)
         
+    def compute_collision_times(self, other: 'Ball') -> npt.NDArray:
+        x = self.x - other.x
+        v = self.v - other.v
+        a = self.a - other.a
+        r = self.r + other.r
+        
+        return np.poly1d((
+            dot(a,a) / 4,
+            dot(v,a),
+            dot(x,a) + dot(v,v),
+            dot(x,v) * 2,
+            dot(x,x) - r*r,
+        )).roots
 
+    def compute_next_collision_time(self, other: 'Ball', t: scalar_T) -> scalar_T:
+        return next_time_after(self.compute_collision_times(other), t=t)
