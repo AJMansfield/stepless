@@ -30,10 +30,12 @@ def energy(t: float, bodies: bodies_and_mass_T):
 
 def conservation_law_obeyed(t: float,
         law: Callable[[float, bodies_and_mass_T], Any],
-        init:bodies_and_mass_T, final:bodies_and_mass_T):
-    init_law_value = law(t, init)
-    final_law_value = law(t, final)
-    return np.allclose(init_law_value, final_law_value)
+        *stages:bodies_and_mass_T):
+    law_value = [law(t, s) for s in stages]
+    for v in law_value:
+        if not np.allclose(law_value[0], v):
+            return False
+    return True
 
 @pytest.mark.parametrize('n', range(5))
 def test_impulse_dx(n):
