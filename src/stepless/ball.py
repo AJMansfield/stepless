@@ -62,8 +62,8 @@ class CollisionImpulse:
             )
         else:
             denom = m1 + m2
-            f1 = -m1 / denom
-            f2 = m2 / denom
+            f1 = -m2 / denom
+            f2 = m1 / denom
             return (
                 CollisionImpulse(t=self.t, dx=self.dx * f1, dv=self.dv * f1, _e=self._e),
                 CollisionImpulse(t=self.t, dx=self.dx * f2, dv=self.dv * f2, _e=self._e)
