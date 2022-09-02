@@ -1,9 +1,39 @@
 import pytest
 import numpy as np
 from stepless.ball import Ball
+from typing import Callable, Any
+from numpy import array as A
 
 def random_vector():
     return np.random.rand(2) * 10
+
+bodies_and_mass_T = list[tuple[Ball, float]]
+def centroid(t: float, bodies: bodies_and_mass_T):
+    mass_pos = np.zeros_like(bodies[0][0].x_at(t))
+    total_mass = 0.
+    for ball, mass in bodies:
+        mass_pos += mass * ball.x_at(t)
+        total_mass += mass
+    return mass_pos / total_mass
+
+def momentum(t: float, bodies: bodies_and_mass_T):
+    momentum = np.zeros_like(bodies[0][0].v_at(t))
+    for ball, mass in bodies:
+        momentum += mass * ball.v_at(t)
+    return momentum
+
+def energy(t: float, bodies: bodies_and_mass_T):
+    energy = 0.
+    for ball, mass in bodies:
+        energy += mass * np.linalg.norm(ball.v_at(t))**2
+    return energy
+
+def conservation_law_obeyed(t: float,
+        law: Callable[[float, bodies_and_mass_T], Any],
+        init:bodies_and_mass_T, final:bodies_and_mass_T):
+    init_law_value = law(t, init)
+    final_law_value = law(t, final)
+    return np.allclose(init_law_value, final_law_value)
 
 @pytest.mark.parametrize('n', range(5))
 def test_impulse_dx(n):
@@ -79,3 +109,70 @@ def test_impulse_dv_da(n):
     b2x = b2.x_at(t)
 
     assert np.allclose(b1x, b2x)
+
+def test_collide():
+    b1 = Ball(x=A([ 1.,0.]), v=A([-1.,0.]))
+    m1 = 1.
+    b2 = Ball(x=A([-1.,0.]), v=A([ 1.,0.]))
+    m2 = 1.
+    t = 0.
+    e = 1.
+
+    i1, i2 = b1.get_collision_impulse(b2, t=t).with_restitution(e).split(m1,m2)
+
+    c1 = b1.apply_impulse(i1)
+    c2 = b2.apply_impulse(i2)
+
+    assert np.allclose(b1.x, c1.x)
+    assert np.allclose(b2.x, c2.x)
+    assert np.allclose(b1.v, -c1.v)
+    assert np.allclose(b2.v, -c2.v)
+    assert conservation_law_obeyed(t, centroid, [(b1,m1),(b2,m2)], [(c1,m1),(c2,m2)])
+    assert conservation_law_obeyed(t, momentum, [(b1,m1),(b2,m2)], [(c1,m1),(c2,m2)])
+    assert conservation_law_obeyed(t, energy, [(b1,m1),(b2,m2)], [(c1,m1),(c2,m2)])
+
+
+def test_collide_misaligned():
+    b1 = Ball(x=A([ 3.,0.]), v=A([-1.,0.]))
+    m1 = 1.
+    b2 = Ball(x=A([-1.,0.]), v=A([ 1.,0.]))
+    m2 = 1.
+    t = 0.
+    e = 1.
+
+    with pytest.warns():
+        i = b1.get_collision_impulse(b2, t=t)
+
+    i1, i2 = i.with_restitution(e).split(m1,m2)
+
+    c1 = b1.apply_impulse(i1)
+    c2 = b2.apply_impulse(i2)
+
+    assert np.allclose(c1.x, A([2.,0.]))
+    assert np.allclose(c2.x, A([0.,0.]))
+    assert np.allclose(b1.v, -c1.v)
+    assert np.allclose(b2.v, -c2.v)
+    assert conservation_law_obeyed(t, centroid, [(b1,m1),(b2,m2)], [(c1,m1),(c2,m2)])
+    assert conservation_law_obeyed(t, momentum, [(b1,m1),(b2,m2)], [(c1,m1),(c2,m2)])
+    assert conservation_law_obeyed(t, energy, [(b1,m1),(b2,m2)], [(c1,m1),(c2,m2)])
+
+def test_collide_infinite_mass():
+    b1 = Ball(x=A([ 1.,0.]), v=A([0.,0.]))
+    m1 = np.inf
+    b2 = Ball(x=A([-1.,0.]), v=A([ 1.,0.]))
+    m2 = 1.
+    t = 0.
+    e = 1.
+
+    i1, i2 = b1.get_collision_impulse(b2, t=t).with_restitution(e).split(m1,m2)
+
+    c1 = b1.apply_impulse(i1)
+    c2 = b2.apply_impulse(i2)
+
+    assert np.allclose(b1.x, c1.x)
+    assert np.allclose(b2.x, c2.x)
+    assert np.allclose(b1.v, c1.v)
+    assert np.allclose(b2.v, -c2.v)
+    assert conservation_law_obeyed(t, centroid, [(b1,m1),(b2,m2)], [(c1,m1),(c2,m2)])
+    assert conservation_law_obeyed(t, momentum, [(b1,m1),(b2,m2)], [(c1,m1),(c2,m2)])
+    assert conservation_law_obeyed(t, energy, [(b1,m1),(b2,m2)], [(c1,m1),(c2,m2)])
