@@ -232,4 +232,4 @@ def test_collide_small_vs_large():
     assert np.linalg.norm(c2.v) > np.linalg.norm(c1.v)
     assert conservation_law_obeyed(t, centroid, [(b1,m1),(b2,m2)], [(c1,m1),(c2,m2)])
     assert conservation_law_obeyed(t, momentum, [(b1,m1),(b2,m2)], [(c1,m1),(c2,m2)])
-    assert np.isclose(energy(t, [(c1,m1),(c2,m2)]), 0.)
+    assert conservation_law_obeyed(t, energy, [(b1,m1),(b2,m2)], [(c1,m1),(c2,m2)])
