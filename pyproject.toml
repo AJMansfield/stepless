@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "stepless"
+version = "0.0.1"
+authors = [
+  { name="Anson Mansfield", email="anson.mansfield@gmail.com" },
+]
+description = "A physics engine that computes only exact solutions, with no 'timestep' integration."
+readme = "README.md"
+license = { file="LICENSE" }
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/AJMansfield/stepless"
+"Bug Tracker" = "https://github.com/AJMansfield/stepless/issues"
