@@ -28,6 +28,8 @@ class Ball:
     def a_at(self, t: scalar_T) -> vector_T:
         return self.a
 
+    def r_at(self, t: scalar_T) -> vector_T:
+        return self.r
     def m_at(self, t: scalar_T) -> vector_T:
         return self.m
 
