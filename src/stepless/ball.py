@@ -1,74 +1,12 @@
-from cmath import isinf
-from dataclasses import dataclass, field
-import dataclasses
+from dataclasses import dataclass, replace
 import numpy as np
-import numpy.typing as npt
+from numpy.typing import NDArray
 from warnings import warn
-from typing import TypedDict, Union
-from functools import singledispatchmethod
+from typing import Union
 
-scalar_T = np.float64
-vector_T = np.ndarray[(2,), scalar_T]
-
-def dot(a, b):
-    try:
-        return a.dot(b)
-    except AttributeError:
-        return a.T @ b #sympy compatibility?
-
-def next_time_after(roots: npt.NDArray, t: scalar_T) -> scalar_T:
-    best = np.inf
-    for r in roots:
-        r = np.real_if_close(r)
-        if np.isrealobj(r) and r > t and r < best:
-            best = r
-    return best
-
-vec_zero = np.zeros(2)
-
-@dataclass
-class CollisionImpulse:
-    t: scalar_T
-    dx: vector_T
-    dv: vector_T
-
-    _e: scalar_T = 0
-    @property
-    def e(self) -> scalar_T:
-        """Set the restitution value of this impulse."""
-        return self.e
-    @e.setter
-    def e(self, restitution: scalar_T):
-        old_e = self._e
-        self._e = restitution
-        self.dv = self.dv / (1+old_e) * (1+self._e)
-    
-    def with_restitution(self, e: scalar_T) -> 'CollisionImpulse':
-        result = dataclasses.replace(self)
-        result.e = e
-        return result
-    
-    def split(self, m1: scalar_T, m2: scalar_T) -> 'tuple[CollisionImpulse, CollisionImpulse]':
-        """Split this impulse into two pieces based on relative masses."""
-        if np.isinf(m1) and not np.isinf(m2):
-            return (
-                CollisionImpulse(t=self.t, dx=vec_zero, dv=vec_zero, _e=self._e),
-                self,
-            )
-        elif not np.isinf(m1) and np.isinf(m2):
-            return (
-                CollisionImpulse(t=self.t, dx=-self.dx, dv=-self.dv, _e=self._e),
-                CollisionImpulse(t=self.t, dx=vec_zero, dv=vec_zero, _e=self._e),
-            )
-        else:
-            denom = m1 + m2
-            f1 = -m2 / denom
-            f2 = m1 / denom
-            return (
-                CollisionImpulse(t=self.t, dx=self.dx * f1, dv=self.dv * f1, _e=self._e),
-                CollisionImpulse(t=self.t, dx=self.dx * f2, dv=self.dv * f2, _e=self._e)
-            )
-
+from stepless.types import scalar_T, vector_T, vec_zero, Massive
+from stepless.util import dot, next_time_after
+from stepless.impulse import CollisionImpulse
 
 @dataclass
 class Ball:
@@ -89,31 +27,63 @@ class Ball:
         return self.a * t + self.v
     def a_at(self, t: scalar_T) -> vector_T:
         return self.a
+
+    def m_at(self, t: scalar_T) -> vector_T:
+        return self.m
+
+    def P_at(self, t: scalar_T) -> vector_T:
+        """Momentum."""
+        return self.m * self.v_at(t)
+    def F_at(self, t: scalar_T) -> vector_T:
+        """Force."""
+        return self.m * self.a_at(t)
+    def U_at(self, t: scalar_T) -> scalar_T:
+        """Potential energy (from acceleration vector)."""
+        return -self.m * dot(self.a_at(t), self.x_at(t) - self.x)
+    def E_at(self, t: scalar_T) -> scalar_T:
+        """Kinetic energy (from velocity)."""
+        v = self.v_at(t)
+        return 0.5 * self.m * dot(v,v)
+
     
     def apply_impulse(self, t: Union[scalar_T, CollisionImpulse],
             dx: vector_T = vec_zero,
             dv: vector_T = vec_zero,
             da: vector_T = vec_zero,
+            dP: vector_T = vec_zero,
+            dF: vector_T = vec_zero,
             ) -> 'Ball':
         if isinstance(t, CollisionImpulse):
-            assert np.all(dx == vec_zero) and np.all(dv == vec_zero) and np.all(da == vec_zero)
+            assert all([
+                np.all(dx == vec_zero),
+                np.all(dv == vec_zero),
+                np.all(da == vec_zero),
+                np.all(dP == vec_zero),
+                np.all(dF == vec_zero),
+            ])
             return self.apply_impulse(t=t.t, dx=t.dx, dv=t.dv)
+
+        da += dF / self.m
+        dv += dP / self.m
 
         new_a = self.a + da
         new_v = self.v - da*t + dv
         new_x = self.x + (da/2*t - dv)*t + dx
-        return self.__class__(x=new_x, v=new_v, a=new_a, r=self.r)
-    
+        return replace(self, x=new_x, v=new_v, a=new_a)
     
     def apply_state(self, t: scalar_T,
             x: vector_T = None,
             v: vector_T = None,
             a: vector_T = None,
+            P: vector_T = None,
+            F: vector_T = None,
             ):
-        dx = vec_zero if x is None else self.x - x
-        dv = vec_zero if v is None else self.v - v
-        da = vec_zero if a is None else self.a - a
-        return self.apply_impulse(t=t,dx=dx,dv=dv,da=da)
+        dx = vec_zero if x is None else self.x_at(t) - x
+        dv = vec_zero if v is None else self.v_at(t) - v
+        da = vec_zero if a is None else self.a_at(t) - a
+        dP = vec_zero if P is None else self.P_at(t) - P
+        dF = vec_zero if F is None else self.F_at(t) - F
+        return self.apply_impulse(t=t,dx=dx,dv=dv,da=da,dP=dP,dF=dF)
 
     def get_collision_impulse(self, other: 'Ball', t: scalar_T) -> CollisionImpulse:
         x = self.x_at(t) - other.x_at(t)
@@ -128,7 +98,7 @@ class Ball:
 
         return CollisionImpulse(t=t, dx=dx, dv=dv)
         
-    def compute_collision_times(self, other: 'Ball') -> npt.NDArray:
+    def compute_collision_times(self, other: 'Ball') -> NDArray:
         x = self.x - other.x
         v = self.v - other.v
         a = self.a - other.a
