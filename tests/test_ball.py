@@ -95,8 +95,8 @@ def test_collide():
 
     i1, i2 = b1.get_collision_impulse(b2, t=t).with_restitution(e).split(b1,b2)
 
-    c1 = b1.apply_impulse(i1)
-    c2 = b2.apply_impulse(i2)
+    c1 = b1 + i1
+    c2 = b2 + i2
 
     universe.append((t, [c1,c2]))
 
@@ -124,8 +124,8 @@ def test_collide_misaligned():
 
     i1, i2 = i.with_restitution(e).split(b1,b2)
 
-    c1 = b1.apply_impulse(i1)
-    c2 = b2.apply_impulse(i2)
+    c1 = b1 + i1
+    c2 = b2 + i2
 
     universe.append((t, [c1,c2]))
 
@@ -149,8 +149,8 @@ def test_collide_immovable_object():
 
     i1, i2 = b1.get_collision_impulse(b2, t=t).with_restitution(e).split(b1,b2)
 
-    c1 = b1.apply_impulse(i1)
-    c2 = b2.apply_impulse(i2)
+    c1 = b1 + i1
+    c2 = b2 + i2
 
     universe.append((t, [c2]))
 
@@ -167,8 +167,8 @@ def test_collide_immovable_object_and_unstoppable_force():
 
     i1, i2 = b1.get_collision_impulse(b2, t=t).with_restitution(e).split(b1,b2)
 
-    c1 = b1.apply_impulse(i1)
-    c2 = b2.apply_impulse(i2)
+    c1 = b1 + i1
+    c2 = b2 + i2
 
     assert np.all(np.isnan(c1.x))
     assert np.all(np.isnan(c2.x))
@@ -186,8 +186,8 @@ def test_collide_inelastic():
 
     i1, i2 = b1.get_collision_impulse(b2, t=t).with_restitution(e).split(b1,b2)
 
-    c1 = b1.apply_impulse(i1)
-    c2 = b2.apply_impulse(i2)
+    c1 = b1 + i1
+    c2 = b2 + i2
 
     universe.append((t, [c1,c2]))
 
@@ -209,8 +209,8 @@ def test_collide_small_vs_large():
 
     i1, i2 = b1.get_collision_impulse(b2, t=t).with_restitution(e).split(b1,b2)
 
-    c1 = b1.apply_impulse(i1)
-    c2 = b2.apply_impulse(i2)
+    c1 = b1 + i1
+    c2 = b2 + i2
 
     universe.append((t, [c1,c2]))
 

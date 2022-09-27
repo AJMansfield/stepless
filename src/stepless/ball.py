@@ -54,8 +54,13 @@ class Ball:
             return self
         else:
             return replace(self, **kw)
+
+    def __add__(self, impulse: CollisionImpulse) -> 'Ball':
+        return self.apply_impulse(t=impulse.t, dx=impulse.dx, dv=impulse.dv)
+    def __iadd__(self, impulse: CollisionImpulse) -> 'Ball':
+        return self.apply_impulse(t=impulse.t, dx=impulse.dx, dv=impulse.dv, inplace=True)
     
-    def apply_impulse(self, t: Union[scalar_T, CollisionImpulse],
+    def apply_impulse(self, t: scalar_T,
             dx: vector_T = vec_zero,
             dv: vector_T = vec_zero,
             da: vector_T = vec_zero,
