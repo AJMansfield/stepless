@@ -42,6 +42,7 @@ class BallView:
     a: ClassVar = ImpulseableVarDescriptor()
     r: ClassVar = SetttableVarDescriptor()
     m: ClassVar = SetttableVarDescriptor()
+    b: ClassVar = SetttableVarDescriptor()
     P: ClassVar = ImpulseableVarDescriptor()
     F: ClassVar = ImpulseableVarDescriptor()
     U: ClassVar = VarDescriptor()

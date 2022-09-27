@@ -27,7 +27,7 @@ class Universe:
         a = self.contents[ka]
         b = self.contents[kb]
         i = a.get_collision_impulse(b, t)
-        i = i.with_restitution(1.)
+        i = i.with_restitution(dot(a.b,b.b))
         ia, ib = i.split(a, b)
         a.apply_impulse(ia)
         b.apply_impulse(ib)
@@ -64,6 +64,7 @@ class BallUniverseView:
     a: ClassVar = ImpulseableVarDescriptor()
     r: ClassVar = SetttableVarDescriptor()
     m: ClassVar = SetttableVarDescriptor()
+    b: ClassVar = SetttableVarDescriptor()
     P: ClassVar = ImpulseableVarDescriptor()
     F: ClassVar = ImpulseableVarDescriptor()
     U: ClassVar = VarDescriptor()

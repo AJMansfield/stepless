@@ -20,6 +20,8 @@ class Ball:
     r"""Collision radius state variable. $$r$$"""
     m: scalar_T = 1.
     r"""Mass state variable. $$m$$"""
+    b: vector_T = vec_zero
+    r"""Restitution vector. $$R = b_1 \cdot b_2$$"""
 
     def x_at(self, t: scalar_T) -> vector_T:
         r"""Position. $$\vec{x} = \frac{1}{2} \vec{a}_0 t^2 + \vec{v}_0 t + \vec{x}_0$$"""
