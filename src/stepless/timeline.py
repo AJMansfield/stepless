@@ -31,7 +31,7 @@ class CollisionHeapItem:
 @dataclass
 class CollisionHeap:
     _heap: list[CollisionHeapItem] = field(default_factory=list)
-    _map: dict[CollisionHeapKey, CollisionHeapItem] = field(default_factory=dict)
+    _map: dict[CollisionHeapKey, CollisionHeapItem] = field(default_factory=dict) # so we can void old collisions
     void_count: int = 0
     entry_count: int = 0
 
@@ -42,9 +42,11 @@ class CollisionHeap:
 
     def _push(self, item: CollisionHeapItem):
         if item.key in self:
-            self._map[item.key].void = True
-            self.void_count += 1
-        if np.isfinite(item.t):
+            self._map[item.key].void = True # a recomputed collision time automatically supercedes the old collision time
+            self.void_count += 1 
+            del self._map[item.key]
+
+        if np.isfinite(item.t): # infinite = they don't collide; don't need to store that
             self._map[item.key] = item
             heapq.heappush(self._heap, item)
             self.entry_count += 1
