@@ -14,7 +14,7 @@ class VarDescriptor:
             self.var = name
     def __get__(self, obj: 'BallView', objtype=None):
         if obj is None: raise AttributeError
-        return getattr(obj, self.var+"_at")(obj.t)
+        return getattr(obj.ball, self.var+"_at")(obj.t)
 
 class SetttableVarDescriptor(VarDescriptor):
     def __set__(self, obj: 'BallView', value):
