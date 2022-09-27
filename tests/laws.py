@@ -21,16 +21,22 @@ def momentum(t: float, bodies: list[Ball]):
         momentum += ball.P_at(t)
     return momentum
 
+def potential_energy(t: float, bodies: list[Ball]):
+    energy = 0.
+    for ball in bodies:
+        energy += ball.U_at(t)
+    return energy
+
 def kinetic_energy(t: float, bodies: list[Ball]):
     energy = 0.
     for ball in bodies:
-        energy += ball.E_at(t)
+        energy += ball.K_at(t)
     return energy
 
 def hamiltonian(t: float, bodies: list[Ball]):
     h = 0.
     for ball in bodies:
-        h += ball.E_at(t) + ball.U_at(t)
+        h += ball.E_at(t)
     return h
 
 def assert_conservation_law_obeyed(

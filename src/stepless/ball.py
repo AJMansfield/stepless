@@ -11,41 +11,49 @@ from stepless.impulse import CollisionImpulse
 @dataclass
 class Ball:
     x: vector_T = vec_zero
-    """Virtual t=0 position of the center of this ball."""
+    r"""Virtual t=0 position state variable. $$\vec{x}_0$$"""
     v: vector_T = vec_zero
-    """Virtual t=0 velocity of the center of this ball."""
+    r"""Virtual t=0 velocity state variable. $$\vec{v}_0$$"""
     a: vector_T = vec_zero
-    """Acceleration of this ball."""
+    r"""Acceleration state variable. $$\vec{a}$$"""
     r: scalar_T = 1.
-    """Collision radius of this ball."""
+    r"""Collision radius state variable. $$r$$"""
     m: scalar_T = 1.
-    """Mass of this ball."""
+    r"""Mass state variable. $$m$$"""
 
     def x_at(self, t: scalar_T) -> vector_T:
+        r"""Position. $$\vec{x} = \frac{1}{2} \vec{a}_0 t^2 + \vec{v}_0 t + \vec{x}_0$$"""
         return (self.a / 2 * t + self.v) * t + self.x
     def v_at(self, t: scalar_T) -> vector_T:
+        r"""Velocity. $$\vec{v} = \vec{a}_0 t + \vec{v}_0$$"""
         return self.a * t + self.v
     def a_at(self, t: scalar_T) -> vector_T:
+        r"""Acceleration. $$\vec{a} = \vec{a}_0$$"""
         return self.a
 
     def r_at(self, t: scalar_T) -> vector_T:
+        r"""Collision radius. $$r$$"""
         return self.r
     def m_at(self, t: scalar_T) -> vector_T:
+        r"""Mass. $$m$$"""
         return self.m
 
     def P_at(self, t: scalar_T) -> vector_T:
-        """Momentum."""
+        r"""Momentum. $$P=m\vec{v}$$"""
         return self.m * self.v_at(t)
     def F_at(self, t: scalar_T) -> vector_T:
-        """Force."""
+        r"""Force aka Thrust, $$F=m\vec{a}$$"""
         return self.m * self.a_at(t)
     def U_at(self, t: scalar_T) -> scalar_T:
-        """Potential energy (from acceleration vector)."""
-        return -self.m * dot(self.a_at(t), self.x_at(t) - self.x)
-    def E_at(self, t: scalar_T) -> scalar_T:
-        """Kinetic energy (from velocity)."""
+        r"""Potential energy (from acceleration vector). $$U = -m \vec{a}\cdot\vec{x}$$"""
+        return -self.m * dot(self.a_at(t), self.x_at(t))
+    def K_at(self, t: scalar_T) -> scalar_T:
+        r"""Kinetic energy (from velocity). $$K=\frac{1}{2} m \left\|\vec{v}\right\|^2$$"""
         v = self.v_at(t)
         return 0.5 * self.m * dot(v,v)
+    def E_at(self, t: scalar_T) -> scalar_T:
+        r"""Total energy. $$E = K + U$$"""
+        return self.K_at(t) + self.U_at(t)
 
     def _inplace_or_replace(self, inplace:bool, **kw):
         if inplace:
