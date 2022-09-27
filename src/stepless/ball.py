@@ -47,6 +47,13 @@ class Ball:
         v = self.v_at(t)
         return 0.5 * self.m * dot(v,v)
 
+    def _inplace_or_replace(self, inplace:bool, **kw):
+        if inplace:
+            for k, v in kw.items():
+                setattr(self, k, v)
+            return self
+        else:
+            return replace(self, **kw)
     
     def apply_impulse(self, t: Union[scalar_T, CollisionImpulse],
             dx: vector_T = vec_zero,
@@ -54,16 +61,8 @@ class Ball:
             da: vector_T = vec_zero,
             dP: vector_T = vec_zero,
             dF: vector_T = vec_zero,
+            inplace: bool = False,
             ) -> 'Ball':
-        if isinstance(t, CollisionImpulse):
-            assert all([
-                np.all(dx == vec_zero),
-                np.all(dv == vec_zero),
-                np.all(da == vec_zero),
-                np.all(dP == vec_zero),
-                np.all(dF == vec_zero),
-            ])
-            return self.apply_impulse(t=t.t, dx=t.dx, dv=t.dv)
 
         da += dF / self.m
         dv += dP / self.m
@@ -71,7 +70,7 @@ class Ball:
         new_a = self.a + da
         new_v = self.v - da*t + dv
         new_x = self.x + (da/2*t - dv)*t + dx
-        return replace(self, x=new_x, v=new_v, a=new_a)
+        return self._inplace_or_replace(inplace, a=new_a, v=new_v, x=new_x)
     
     def apply_state(self, t: scalar_T,
             x: vector_T = None,
@@ -79,13 +78,14 @@ class Ball:
             a: vector_T = None,
             P: vector_T = None,
             F: vector_T = None,
+            inplace: bool = False,
             ):
         dx = vec_zero if x is None else self.x_at(t) - x
         dv = vec_zero if v is None else self.v_at(t) - v
         da = vec_zero if a is None else self.a_at(t) - a
         dP = vec_zero if P is None else self.P_at(t) - P
         dF = vec_zero if F is None else self.F_at(t) - F
-        return self.apply_impulse(t=t,dx=dx,dv=dv,da=da,dP=dP,dF=dF)
+        return self.apply_impulse(t=t,dx=dx,dv=dv,da=da,dP=dP,dF=dF,inplace=inplace)
 
     def get_collision_impulse(self, other: 'Ball', t: scalar_T) -> CollisionImpulse:
         x = self.x_at(t) - other.x_at(t)
